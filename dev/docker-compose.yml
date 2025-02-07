@@ -1,0 +1,15 @@
+version: "3.3"
+
+services:
+  # postgresql://easy-invoice:easy-invoice@localhost:7406/easy-invoice
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: easy-invoice
+      POSTGRES_PASSWORD: easy-invoice
+      POSTGRES_DB: easy-invoice
+      POSTGRES_HOST: postgres
+    ports:
+      - "7406:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data

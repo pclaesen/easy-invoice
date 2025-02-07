@@ -1,0 +1,5 @@
+export const CURRENCY_VALUE = {
+  eth: "eth",
+  usdc: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+  fau: "0x370DE27fdb7D1Ff1e1BaA7D11c5820a324Cf623C",
+};
