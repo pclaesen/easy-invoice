@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { type User } from "@/server/db/schema";
+import type { User } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";

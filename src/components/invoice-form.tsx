@@ -1,12 +1,8 @@
 "use client";
 
-import { UseFormReturn, useFieldArray } from "react-hook-form";
-import { InvoiceFormValues } from "@/lib/schemas/invoice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -14,6 +10,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  INVOICE_CURRENCIES,
+  type InvoiceCurrency,
+  formatCurrencyLabel,
+  getPaymentCurrenciesForInvoice,
+} from "@/lib/currencies";
+import type { InvoiceFormValues } from "@/lib/schemas/invoice";
+import { Plus, Trash2 } from "lucide-react";
+import type { UseFormReturn } from "react-hook-form";
+import { useFieldArray } from "react-hook-form";
 
 interface InvoiceFormProps {
   form: UseFormReturn<InvoiceFormValues>;
@@ -155,28 +162,62 @@ export function InvoiceForm({ form, onSubmit, isLoading }: InvoiceFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="cryptocurrency">Cryptocurrency</Label>
+        <Label htmlFor="invoiceCurrency">Invoice Currency</Label>
         <Select
-          onValueChange={(value) =>
-            form.setValue("cryptocurrency", value as "eth" | "usdc" | "fau")
-          }
-          defaultValue={form.getValues("cryptocurrency")}
+          onValueChange={(value) => {
+            const currency = value as InvoiceCurrency;
+            form.setValue("invoiceCurrency", currency);
+            // If not USD, set payment currency to same as invoice currency
+            if (currency !== "USD") {
+              form.setValue("paymentCurrency", currency);
+            }
+          }}
+          defaultValue={form.getValues("invoiceCurrency")}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select cryptocurrency" />
+            <SelectValue placeholder="Select invoice currency" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="eth">Ethereum (ETH)</SelectItem>
-            <SelectItem value="usdc">USD Coin (USDC)</SelectItem>
-            <SelectItem value="fau">Faucet Token (FAU)</SelectItem>
+            {INVOICE_CURRENCIES.map((currency) => (
+              <SelectItem key={currency} value={currency}>
+                {formatCurrencyLabel(currency)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
-        {form.formState.errors.cryptocurrency && (
+        {form.formState.errors.invoiceCurrency && (
           <p className="text-sm text-red-500">
-            {form.formState.errors.cryptocurrency.message}
+            {form.formState.errors.invoiceCurrency.message}
           </p>
         )}
       </div>
+
+      {/* Only show payment currency selector for USD invoices */}
+      {form.watch("invoiceCurrency") === "USD" && (
+        <div className="space-y-2">
+          <Label htmlFor="paymentCurrency">Payment Currency</Label>
+          <Select
+            onValueChange={(value) => form.setValue("paymentCurrency", value)}
+            defaultValue={form.getValues("paymentCurrency")}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select payment currency" />
+            </SelectTrigger>
+            <SelectContent>
+              {getPaymentCurrenciesForInvoice("USD").map((currency) => (
+                <SelectItem key={currency} value={currency}>
+                  {formatCurrencyLabel(currency)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {form.formState.errors.paymentCurrency && (
+            <p className="text-sm text-red-500">
+              {form.formState.errors.paymentCurrency.message}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="walletAddress">Your Wallet Address</Label>
@@ -191,25 +232,17 @@ export function InvoiceForm({ form, onSubmit, isLoading }: InvoiceFormProps) {
         )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="clientWallet">Client's Wallet Address</Label>
-        <Input
-          {...form.register("clientWallet")}
-          placeholder="Enter client's wallet address"
-        />
-        {form.formState.errors.clientWallet && (
-          <p className="text-sm text-red-500">
-            {form.formState.errors.clientWallet.message}
-          </p>
-        )}
-      </div>
-
       <div className="flex justify-end">
         <Button
           type="submit"
           className="bg-black hover:bg-zinc-800 text-white transition-colors"
+          disabled={isLoading || form.formState.isSubmitSuccessful}
         >
-          {isLoading ? "Creating..." : "Create Invoice"}
+          {isLoading
+            ? "Creating..."
+            : form.formState.isSubmitSuccessful
+              ? "Invoice created"
+              : "Create Invoice"}
         </Button>
       </div>
     </form>

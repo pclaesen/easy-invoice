@@ -1,7 +1,13 @@
 import { getCurrentSession } from "@/server/auth";
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "EasyInvoice | Simple Invoice Management",
+  description: "Create, manage and track invoices easily with Request Network",
+};
 
 export default async function LoginPage() {
   const { user } = await getCurrentSession();
@@ -36,7 +42,7 @@ export default async function LoginPage() {
           <nav className="max-w-7xl mx-auto flex justify-between items-center">
             <div className="flex items-center gap-x-2">
               <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center">
-                <span className="text-white font-bold">IP</span>
+                <span className="text-white font-bold">EI</span>
               </div>
               <span className="text-xl font-semibold">EasyInvoice</span>
             </div>
@@ -77,9 +83,9 @@ export default async function LoginPage() {
         </main>
 
         <footer className="w-full p-6">
-          <div className="max-w-7xl mx-auto flex justify-between items-center text-sm text-zinc-600">
+          <div className="max-w-7xl mx-auto flex justify-center items-center text-sm text-zinc-600">
             <div>
-              © 2024 EasyInvoice. All rights reserved. Built by{" "}
+              © 2025 EasyInvoice. All rights reserved. Built by{" "}
               <Link href="https://request.network" className="underline">
                 Request Network
               </Link>

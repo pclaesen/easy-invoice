@@ -3,13 +3,29 @@
 import { InvoiceForm } from "@/components/invoice-form";
 import { InvoicePreview } from "@/components/invoice-preview";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { InvoiceFormValues, invoiceFormSchema } from "@/lib/schemas/invoice";
+import {
+  type InvoiceFormValues,
+  invoiceFormSchema,
+} from "@/lib/schemas/invoice";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 export function InvoiceCreator() {
-  const { mutate: createInvoice, isLoading } = api.invoice.create.useMutation();
+  const router = useRouter();
+
+  const { mutate: createInvoice, isLoading } = api.invoice.create.useMutation({
+    onSuccess: () => {
+      toast.success("Invoice created successfully", {
+        description: "Redirecting to dashboard in 3 seconds",
+      });
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 3000);
+    },
+  });
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
@@ -20,14 +36,23 @@ export function InvoiceCreator() {
       clientEmail: "",
       items: [{ description: "", quantity: 1, price: 0 }],
       notes: "",
-      cryptocurrency: "eth",
+      invoiceCurrency: "USD",
+      paymentCurrency: "",
       walletAddress: "",
-      clientWallet: "",
     },
   });
 
   const onSubmit = async (data: InvoiceFormValues) => {
-    createInvoice(data);
+    try {
+      await createInvoice(data);
+    } catch (error) {
+      toast.error("Failed to create invoice", {
+        description:
+          error instanceof Error
+            ? error.message
+            : "An unexpected error occurred",
+      });
+    }
   };
 
   return (

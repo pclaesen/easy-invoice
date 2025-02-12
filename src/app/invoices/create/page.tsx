@@ -1,8 +1,14 @@
 import { InvoiceCreator } from "@/components/invoice-creator";
 import { getCurrentSession } from "@/server/auth";
 import { ArrowLeft } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+
+export const metadata: Metadata = {
+  title: "Create Invoice | EasyInvoice",
+  description: "Create a new invoice for your clients",
+};
 
 export default async function CreateInvoicePage() {
   const { session } = await getCurrentSession();
@@ -38,7 +44,7 @@ export default async function CreateInvoicePage() {
           <nav className="max-w-7xl mx-auto flex justify-between items-center">
             <Link href="/dashboard" className="flex items-center gap-x-2">
               <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center">
-                <span className="text-white font-bold">IP</span>
+                <span className="text-white font-bold">EI</span>
               </div>
               <span className="text-xl font-semibold">EasyInvoice</span>
             </Link>
