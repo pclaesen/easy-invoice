@@ -6,6 +6,9 @@ export const invoiceFormSchema = z.object({
   dueDate: z.string().min(1, "Due date is required"),
   clientName: z.string().min(1, "Client name is required"),
   clientEmail: z.string().email("Invalid email address"),
+  invoicedTo: z.string().optional(),
+  creatorName: z.string().min(1, "Your name is required"),
+  creatorEmail: z.string().email("Invalid email address"),
   items: z
     .array(
       z.object({

@@ -41,6 +41,7 @@ export const userTable = createTable("user", {
   id: text().primaryKey().notNull(),
   googleId: text().unique(),
   name: text(),
+  email: text().unique(),
 });
 
 export const requestTable = createTable("request", {
@@ -50,6 +51,8 @@ export const requestTable = createTable("request", {
   issuedDate: text().notNull(),
   clientName: text().notNull(),
   clientEmail: text().notNull(),
+  creatorName: text().notNull(),
+  creatorEmail: text().notNull(),
   invoiceNumber: text().notNull(),
   items: json().notNull(),
   notes: text(),
@@ -66,6 +69,7 @@ export const requestTable = createTable("request", {
     .references(() => userTable.id, {
       onDelete: "cascade",
     }),
+  invoicedTo: text(),
 });
 
 export const sessionTable = createTable("session", {
@@ -81,11 +85,23 @@ export const sessionTable = createTable("session", {
   }).notNull(),
 });
 
+export const invoiceMeTable = createTable("invoice_me", {
+  id: text().primaryKey().notNull(),
+  label: text().notNull(),
+  userId: text()
+    .notNull()
+    .references(() => userTable.id, {
+      onDelete: "cascade",
+    }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relationships
 
 export const userRelations = relations(userTable, ({ many }) => ({
   requests: many(requestTable),
   session: many(sessionTable),
+  invoiceMe: many(invoiceMeTable),
 }));
 
 export const requestRelations = relations(requestTable, ({ one }) => ({
@@ -102,6 +118,14 @@ export const sessionRelations = relations(sessionTable, ({ one }) => ({
   }),
 }));
 
+export const invoiceMeRelations = relations(invoiceMeTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [invoiceMeTable.userId],
+    references: [userTable.id],
+  }),
+}));
+
 export type Request = InferSelectModel<typeof requestTable>;
 export type User = InferSelectModel<typeof userTable>;
 export type Session = InferSelectModel<typeof sessionTable>;
+export type InvoiceMe = InferSelectModel<typeof invoiceMeTable>;

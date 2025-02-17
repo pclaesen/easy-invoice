@@ -13,27 +13,52 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-export function InvoiceCreator() {
-  const router = useRouter();
+interface InvoiceCreatorProps {
+  recipientDetails?: {
+    clientName: string;
+    clientEmail: string;
+    userId: string;
+  };
+  currentUser?: {
+    name: string;
+    email: string;
+  };
+}
 
-  const { mutate: createInvoice, isLoading } = api.invoice.create.useMutation({
-    onSuccess: () => {
-      toast.success("Invoice created successfully", {
-        description: "Redirecting to dashboard in 3 seconds",
+export function InvoiceCreator({
+  recipientDetails,
+  currentUser,
+}: InvoiceCreatorProps) {
+  const router = useRouter();
+  const isInvoiceMe = !!recipientDetails?.userId;
+
+  const { mutate: createInvoice, isLoading } = isInvoiceMe
+    ? api.invoice.createFromInvoiceMe.useMutation({
+        onSuccess: () => {
+          toast.success("Invoice created successfully", {
+            description: "You can safely close this page now",
+          });
+        },
+      })
+    : api.invoice.create.useMutation({
+        onSuccess: () => {
+          toast.success("Invoice created successfully");
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 3000);
+        },
       });
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 3000);
-    },
-  });
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
       invoiceNumber: "",
       dueDate: "",
-      clientName: "",
-      clientEmail: "",
+      creatorName: !isInvoiceMe ? (currentUser?.name ?? "") : "",
+      creatorEmail: !isInvoiceMe ? (currentUser?.email ?? "") : "",
+      clientName: recipientDetails?.clientName ?? "",
+      clientEmail: recipientDetails?.clientEmail ?? "",
+      invoicedTo: recipientDetails?.userId ?? "",
       items: [{ description: "", quantity: 1, price: 0 }],
       notes: "",
       invoiceCurrency: "USD",
@@ -62,7 +87,12 @@ export function InvoiceCreator() {
           <CardTitle>Invoice Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <InvoiceForm form={form} onSubmit={onSubmit} isLoading={isLoading} />
+          <InvoiceForm
+            form={form}
+            onSubmit={onSubmit}
+            isLoading={isLoading}
+            recipientDetails={recipientDetails}
+          />
         </CardContent>
       </Card>
 

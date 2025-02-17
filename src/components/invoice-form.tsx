@@ -26,9 +26,18 @@ interface InvoiceFormProps {
   form: UseFormReturn<InvoiceFormValues>;
   onSubmit: (data: InvoiceFormValues) => void;
   isLoading: boolean;
+  recipientDetails?: {
+    clientName: string;
+    clientEmail: string;
+  };
 }
 
-export function InvoiceForm({ form, onSubmit, isLoading }: InvoiceFormProps) {
+export function InvoiceForm({
+  form,
+  onSubmit,
+  isLoading,
+  recipientDetails,
+}: InvoiceFormProps) {
   const { fields, append, remove } = useFieldArray({
     name: "items",
     control: form.control,
@@ -58,35 +67,76 @@ export function InvoiceForm({ form, onSubmit, isLoading }: InvoiceFormProps) {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="clientName">Client Name</Label>
-        <Input
-          {...form.register("clientName")}
-          placeholder="Enter client name"
-        />
-        {form.formState.errors.clientName && (
-          <p className="text-sm text-red-500">
-            {form.formState.errors.clientName.message}
-          </p>
-        )}
-      </div>
+      {recipientDetails ? (
+        // Show creator fields when we have recipient details (invoice-me flow)
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="creatorName">Your Name</Label>
+            <Input
+              {...form.register("creatorName")}
+              placeholder="Enter your name"
+            />
+            {form.formState.errors.creatorName && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.creatorName.message}
+              </p>
+            )}
+          </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="clientEmail">Client Email</Label>
-        <Input
-          {...form.register("clientEmail")}
-          type="email"
-          placeholder="client@example.com"
-        />
-        {form.formState.errors.clientEmail && (
-          <p className="text-sm text-red-500">
-            {form.formState.errors.clientEmail.message}
-          </p>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Label htmlFor="creatorEmail">Your Email</Label>
+            <Input
+              {...form.register("creatorEmail")}
+              type="email"
+              placeholder="your@email.com"
+            />
+            {form.formState.errors.creatorEmail && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.creatorEmail.message}
+              </p>
+            )}
+          </div>
+        </>
+      ) : (
+        // Show client fields for normal invoice flow
+        <>
+          <div className="space-y-2">
+            <Label htmlFor="clientName">Client Name</Label>
+            <Input
+              {...form.register("clientName")}
+              placeholder="Enter client name"
+            />
+            {form.formState.errors.clientName && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.clientName.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="clientEmail">Client Email</Label>
+            <Input
+              {...form.register("clientEmail")}
+              type="email"
+              placeholder="client@example.com"
+            />
+            {form.formState.errors.clientEmail && (
+              <p className="text-sm text-red-500">
+                {form.formState.errors.clientEmail.message}
+              </p>
+            )}
+          </div>
+        </>
+      )}
 
       <div className="space-y-2">
         <Label>Items</Label>
+        <div className="grid grid-cols-[1fr,80px,96px,40px] gap-4 mb-1">
+          <Label className="text-xs text-gray-500">Description</Label>
+          <Label className="text-xs text-gray-500">Quantity</Label>
+          <Label className="text-xs text-gray-500">Price</Label>
+          <div />
+        </div>
         {fields.map((field, index) => (
           <div key={field.id} className="flex items-end gap-4">
             <div className="flex-grow">

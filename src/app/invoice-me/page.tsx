@@ -1,21 +1,24 @@
-import { InvoiceCreator } from "@/components/invoice-creator";
+import { InvoiceMeLinks } from "@/components/invoice-me-links";
+import { UserMenu } from "@/components/user-menu";
 import { getCurrentSession } from "@/server/auth";
-import { ArrowLeft } from "lucide-react";
+import { api } from "@/trpc/server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Create Invoice | EasyInvoice",
-  description: "Create a new invoice for your clients",
+  title: "Invoice Me Links | EasyInvoice",
+  description: "Manage your invoice me links",
 };
 
-export default async function CreateInvoicePage() {
+export default async function InvoiceMePage() {
   const { user } = await getCurrentSession();
 
   if (!user) {
     redirect("/");
   }
+
+  const links = await api.invoiceMe.getAll.query();
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] relative overflow-hidden">
@@ -40,38 +43,34 @@ export default async function CreateInvoicePage() {
       {/* Content */}
       <div className="relative min-h-screen flex flex-col">
         {/* Header */}
-        <header className="w-full p-6 z-10">
+        <header className="w-full p-6 z-50 relative">
           <nav className="max-w-7xl mx-auto flex justify-between items-center">
-            <Link href="/dashboard" className="flex items-center gap-x-2">
+            <div className="flex items-center gap-x-2">
               <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center">
                 <span className="text-white font-bold">EI</span>
               </div>
               <span className="text-xl font-semibold">EasyInvoice</span>
-            </Link>
+            </div>
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/dashboard"
+                className="text-zinc-900 hover:text-zinc-600 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/invoice-me"
+                className="text-zinc-900 hover:text-zinc-600 transition-colors"
+              >
+                Invoice Me
+              </Link>
+              <UserMenu user={user} />
+            </div>
           </nav>
         </header>
 
         {/* Main Content */}
-        <main className="flex-grow flex flex-col max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 z-10">
-          <div className="flex items-center mb-8">
-            <Link
-              href="/dashboard"
-              className="text-zinc-600 hover:text-black transition-colors mr-4"
-            >
-              <ArrowLeft className="h-6 w-6" />
-            </Link>
-            <h1 className="text-4xl font-bold tracking-tight">
-              Create New Invoice
-            </h1>
-          </div>
-
-          <InvoiceCreator
-            currentUser={{
-              email: user.email ?? "",
-              name: user.name ?? "",
-            }}
-          />
-        </main>
+        <InvoiceMeLinks initialLinks={links} />
       </div>
     </div>
   );

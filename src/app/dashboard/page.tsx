@@ -16,12 +16,11 @@ export const metadata: Metadata = {
 export default async function DashboardPage() {
   const { user } = await getCurrentSession();
 
-  const { invoices, totalPayments, outstandingInvoices } =
-    await api.invoice.getAll.query();
-
   if (!user) {
     redirect("/");
   }
+
+  const invoices = await api.invoice.getAll.query();
 
   return (
     <div className="min-h-screen bg-[#FAFAFA] relative overflow-hidden">
@@ -55,6 +54,19 @@ export default async function DashboardPage() {
               <span className="text-xl font-semibold">EasyInvoice</span>
             </div>
             <div className="flex items-center space-x-4">
+              <Link
+                href="/dashboard"
+                className="text-zinc-900 hover:text-zinc-600 transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/invoice-me"
+                className="text-zinc-900 hover:text-zinc-600 transition-colors"
+              >
+                Invoice Me
+              </Link>
+
               <UserMenu user={user} />
             </div>
           </nav>
@@ -74,13 +86,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          <InvoiceTable
-            initialInvoices={{
-              invoices,
-              totalPayments,
-              outstandingInvoices,
-            }}
-          />
+          <InvoiceTable initialInvoices={invoices} />
         </main>
       </div>
     </div>
