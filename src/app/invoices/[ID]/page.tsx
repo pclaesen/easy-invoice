@@ -2,9 +2,11 @@ import { BackgroundWrapper } from "@/components/background-wrapper";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { PaymentSection } from "@/components/payment-section";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrencyLabel } from "@/lib/currencies";
 import { api } from "@/trpc/server";
+import { format } from "date-fns";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -80,6 +82,35 @@ export default async function PaymentPage({
                     <div className="text-sm">{formatDate(invoice.dueDate)}</div>
                   </div>
                 </div>
+                {invoice.recurrence && (
+                  <div className="mt-4">
+                    <div className="text-xs text-neutral-500 mb-1">
+                      RECURRING
+                    </div>
+                    <div className="text-sm flex items-center gap-1">
+                      <span>
+                        ↻ {invoice.recurrence.frequency.toLowerCase()}
+                      </span>
+                      {invoice.recurrence.startDate && (
+                        <span>
+                          • Starting{" "}
+                          {format(
+                            new Date(invoice.recurrence.startDate),
+                            "do MMM yyyy",
+                          )}
+                        </span>
+                      )}
+                      {invoice.isRecurrenceStopped && (
+                        <Badge
+                          variant="outline"
+                          className="ml-1 text-xs py-0 px-1"
+                        >
+                          Stopped
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* From/To Section */}

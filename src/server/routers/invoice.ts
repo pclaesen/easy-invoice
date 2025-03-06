@@ -22,6 +22,12 @@ const createInvoiceHelper = async (
     payee: input.walletAddress,
     invoiceCurrency: input.invoiceCurrency,
     paymentCurrency: input.paymentCurrency,
+    ...(input.isRecurring && {
+      recurrence: {
+        startDate: input.startDate,
+        frequency: input.frequency,
+      },
+    }),
   });
 
   const invoice = await db
@@ -47,6 +53,12 @@ const createInvoiceHelper = async (
       notes: input.notes,
       userId: userId,
       invoicedTo: input.invoicedTo || null,
+      recurrence: input.isRecurring
+        ? {
+            startDate: input.startDate,
+            frequency: input.frequency,
+          }
+        : null,
     })
     .returning();
 
@@ -200,5 +212,41 @@ export const invoiceRouter = router({
       }
 
       return { success: true, data: response.data };
+    }),
+  stopRecurrence: publicProcedure
+    .input(
+      z.object({
+        paymentReference: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { paymentReference } = input;
+
+      const request = await apiClient.patch(
+        `/v1/request/${paymentReference}/stop-recurrence`,
+      );
+
+      if (request.status !== 200) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Failed to stop recurrence",
+        });
+      }
+      const updatedInvoice = await ctx.db
+        .update(requestTable)
+        .set({
+          isRecurrenceStopped: true,
+        })
+        .where(eq(requestTable.paymentReference, paymentReference))
+        .returning();
+
+      if (!updatedInvoice.length) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Invoice with this payment reference not found",
+        });
+      }
+
+      return updatedInvoice[0];
     }),
 });

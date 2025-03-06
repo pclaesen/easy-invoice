@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -14,9 +15,17 @@ import { formatCurrencyLabel } from "@/lib/currencies";
 import type { Request } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { format, isPast } from "date-fns";
-import { AlertCircle, DollarSign, Eye, FileText, Plus } from "lucide-react";
+import {
+  AlertCircle,
+  Ban,
+  DollarSign,
+  Eye,
+  FileText,
+  Plus,
+} from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "./ui/button";
 
 const ITEMS_PER_PAGE = 10;
@@ -220,12 +229,47 @@ const InvoiceRow = ({
   invoice,
   activeTab,
 }: { invoice: Request; activeTab: "sent" | "received" }) => {
+  const utils = api.useUtils();
   const dueDate = new Date(invoice.dueDate);
   const isOverdue = invoice.status === "pending" && isPast(dueDate);
 
+  const stopRecurrenceMutation = api.invoice.stopRecurrence.useMutation({
+    onSuccess: () => {
+      toast.success("Recurring payment stopped successfully");
+      // Refresh the invoice list
+      utils.invoice.getAll.invalidate();
+    },
+    onError: (error) => {
+      toast.error(`Failed to stop recurring payment: ${error.message}`);
+    },
+  });
+
+  // Function to handle stopping recurrence
+  const handleStopRecurrence = () => {
+    if (confirm("Are you sure you want to stop this recurring payment?")) {
+      stopRecurrenceMutation.mutate({
+        paymentReference: invoice.paymentReference,
+      });
+    }
+  };
+
   return (
     <TableRow className="hover:bg-zinc-50/50">
-      <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+      <TableCell className="font-medium">
+        <div className="flex flex-col">
+          <span>{invoice.invoiceNumber}</span>
+          {invoice.recurrence && (
+            <span className="text-xs text-zinc-500 flex items-center gap-1">
+              ↻ {invoice.recurrence?.frequency?.toLowerCase()}
+              {invoice.isRecurrenceStopped && (
+                <Badge variant="outline" className="ml-1 text-xs py-0 px-1">
+                  Stopped
+                </Badge>
+              )}
+            </span>
+          )}
+        </div>
+      </TableCell>
       <TableCell>
         <div className="flex flex-col">
           <span>
@@ -236,7 +280,17 @@ const InvoiceRow = ({
           </code>
         </div>
       </TableCell>
-      <TableCell>${Number(invoice.amount).toLocaleString()}</TableCell>
+      <TableCell>
+        <div className="flex flex-col">
+          <span>${Number(invoice.amount).toLocaleString()}</span>
+          {invoice?.recurrence?.startDate && (
+            <span className="text-xs text-zinc-500">
+              from{" "}
+              {format(new Date(invoice?.recurrence?.startDate), "do MMM yyyy")}
+            </span>
+          )}
+        </div>
+      </TableCell>
       <TableCell>{formatCurrencyLabel(invoice.invoiceCurrency)}</TableCell>
       <TableCell>{format(dueDate, "do MMM yyyy")}</TableCell>
       <TableCell>
@@ -255,13 +309,34 @@ const InvoiceRow = ({
         </span>
       </TableCell>
       <TableCell>
-        <Link
-          href={`/invoices/${invoice.id}`}
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 transition-colors"
-        >
-          <Eye className="h-4 w-4 text-zinc-600" />
-          <span className="sr-only">View</span>
-        </Link>
+        <div className="flex items-center space-x-2">
+          <Link
+            href={`/invoices/${invoice.id}`}
+            className="inline-flex items-center justify-center h-8 w-8 rounded-md border border-zinc-200 bg-white hover:bg-zinc-50 transition-colors"
+          >
+            <Eye className="h-4 w-4 text-zinc-600" />
+            <span className="sr-only">View</span>
+          </Link>
+
+          {invoice.recurrence &&
+            !invoice.isRecurrenceStopped &&
+            activeTab === "sent" && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleStopRecurrence}
+                disabled={stopRecurrenceMutation.isLoading}
+                className="h-8 w-8"
+              >
+                <Ban className="h-4 w-4 text-zinc-600" />
+                <span className="sr-only">
+                  {stopRecurrenceMutation.isLoading
+                    ? "Stopping..."
+                    : "Stop Recurring"}
+                </span>
+              </Button>
+            )}
+        </div>
       </TableCell>
     </TableRow>
   );
