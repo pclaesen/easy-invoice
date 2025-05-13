@@ -68,8 +68,8 @@ const getRouteType = (route: PaymentRouteType, invoiceChain: string | null) => {
   }
 
   return {
-    type: "cross-chain" as const,
-    label: "Cross-Chain Payment",
+    type: "crosschain" as const,
+    label: "Crosschain Payment",
     description: `Pay from ${route.chain} network using ${route.token}`,
   };
 };
