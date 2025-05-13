@@ -52,7 +52,7 @@ export function Header({ user }: { user?: User | undefined }) {
                   href={demoMeetingUrl}
                   className="text-zinc-900 hover:text-zinc-600 transition-colors"
                 >
-                  Book Demo
+                  Book a Demo
                 </Link>
               )}
               <UserMenu user={user} />
