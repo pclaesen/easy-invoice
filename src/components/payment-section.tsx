@@ -152,7 +152,7 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
     }
   };
 
-  const handleCrosschaimPayments = async (paymentData: any, signer: any) => {
+  const handleCrosschainPayments = async (paymentData: any, signer: any) => {
     const paymentIntent = JSON.parse(paymentData.paymentIntent);
     const supportsEIP2612 = paymentData.metadata.supportsEIP2612;
     let approvalSignature = undefined;
@@ -294,7 +294,7 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
       const isPaygrid = paymentData.paymentIntentId;
 
       if (isPaygrid) {
-        await handleCrosschaimPayments(paymentData, signer);
+        await handleCrosschainPayments(paymentData, signer);
       } else {
         await handleDirectPayments(paymentData, signer);
       }
