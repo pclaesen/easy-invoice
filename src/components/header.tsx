@@ -48,12 +48,13 @@ export function Header({ user }: { user?: User | undefined }) {
                 Invoice Me
               </Link>
               {demoMeetingUrl && (
-                <Link
-                  href={demoMeetingUrl}
-                  className="text-zinc-900 hover:text-zinc-600 transition-colors"
+                <Button
+                  variant="outline"
+                  asChild
+                  className="bg-black hover:bg-zinc-800 text-white transition-colors font-bold"
                 >
-                  Book a Demo
-                </Link>
+                  <Link href={demoMeetingUrl}>Book a Demo</Link>
+                </Button>
               )}
               <UserMenu user={user} />
             </>
@@ -62,10 +63,11 @@ export function Header({ user }: { user?: User | undefined }) {
           {demoMeetingUrl && !user && (
             <Button
               asChild
-              className="bg-black hover:bg-zinc-800 text-white transition-colors"
+              className="bg-black hover:bg-zinc-800 text-white transition-colors font-bold"
+              variant="outline"
             >
               <Link href={demoMeetingUrl} target="_blank">
-                Book Demo
+                Book a Demo
               </Link>
             </Button>
           )}

@@ -15,8 +15,8 @@ Easy Invoice is a modern, user-friendly web application that demonstrates the po
 
 - Node.js 18+
 - PostgreSQL database
-- Google OAuth credentials (for authentication)
-- Request Network API key
+- Google OAuth credentials (for authentication - obtained from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials))
+- Request Network API key (obtained from the [Request Network portal](https://portal.request.network/))
 - Reown Project ID
 
 ### Environment Setup
