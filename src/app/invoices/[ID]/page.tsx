@@ -4,12 +4,11 @@ import { Header } from "@/components/header";
 import { PaymentSection } from "@/components/payment-section";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrencyLabel } from "@/lib/currencies";
+import { formatCurrencyLabel } from "@/lib/constants/currencies";
+import { formatDate } from "@/lib/date-utils";
 import { api } from "@/trpc/server";
-import { format } from "date-fns";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-
 export const metadata: Metadata = {
   title: "Invoice Payment | EasyInvoice",
   description: "Process payment for your invoice",
@@ -32,13 +31,9 @@ export default async function PaymentPage({
     notFound();
   }
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString(undefined, {
-      year: "2-digit",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
+  const paymentDetailsData = invoice.paymentDetailsId
+    ? await api.compliance.getPaymentDetailsById.query(invoice.paymentDetailsId)
+    : null;
 
   return (
     <BackgroundWrapper
@@ -93,11 +88,7 @@ export default async function PaymentPage({
                       </span>
                       {invoice.recurrence.startDate && (
                         <span>
-                          • Starting{" "}
-                          {format(
-                            new Date(invoice.recurrence.startDate),
-                            "do MMM yyyy",
-                          )}
+                          • Starting {formatDate(invoice.recurrence.startDate)}
                         </span>
                       )}
                       {invoice.isRecurrenceStopped && (
@@ -212,6 +203,57 @@ export default async function PaymentPage({
                     {formatCurrencyLabel(invoice.paymentCurrency)}
                   </div>
                 </div>
+                {paymentDetailsData?.paymentDetails ? (
+                  <div>
+                    <div className="text-xs text-neutral-500 mb-1">
+                      BANK ACCOUNT DETAILS
+                    </div>
+                    {paymentDetailsData.paymentDetails.accountName && (
+                      <div className="text-sm">
+                        {paymentDetailsData.paymentDetails.accountName}
+                      </div>
+                    )}
+                    {paymentDetailsData.paymentDetails.accountNumber && (
+                      <div className="text-sm">
+                        {paymentDetailsData.paymentDetails.accountNumber.replace(
+                          /^\d+(?=\d{4})/,
+                          "****",
+                        )}
+                      </div>
+                    )}
+                    {paymentDetailsData.paymentDetails.bankName && (
+                      <div className="text-sm">
+                        {paymentDetailsData.paymentDetails.bankName}
+                      </div>
+                    )}
+                    {paymentDetailsData.paymentDetails.swiftBic && (
+                      <div className="text-sm">
+                        {paymentDetailsData.paymentDetails.swiftBic}
+                      </div>
+                    )}
+                    {paymentDetailsData.paymentDetails.iban && (
+                      <div className="text-sm">
+                        {paymentDetailsData.paymentDetails.iban}
+                      </div>
+                    )}
+                    {paymentDetailsData.paymentDetails.currency && (
+                      <div className="text-sm">
+                        {paymentDetailsData.paymentDetails.currency.toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <div className="text-xs text-neutral-500 mb-1">
+                      BANK ACCOUNT DETAILS
+                    </div>
+                    <div className="text-sm text-neutral-500">
+                      {!invoice.paymentDetailsId
+                        ? "No payment details available"
+                        : "Unable to load payment details"}
+                    </div>
+                  </div>
+                )}
                 {invoice.notes && (
                   <div>
                     <div className="text-xs text-neutral-500 mb-1">NOTES</div>

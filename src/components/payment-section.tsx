@@ -4,8 +4,11 @@ import { PaymentRoute } from "@/components/payment-route";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { CHAIN_TO_ID, ID_TO_APPKIT_NETWORK } from "@/lib/chains";
-import { MAINNET_CURRENCIES, formatCurrencyLabel } from "@/lib/currencies";
+import { CHAIN_TO_ID, ID_TO_APPKIT_NETWORK } from "@/lib/constants/chains";
+import {
+  MAINNET_CURRENCIES,
+  formatCurrencyLabel,
+} from "@/lib/constants/currencies";
 import type { PaymentRoute as PaymentRouteType } from "@/lib/types";
 import type { Request } from "@/server/db/schema";
 import { api } from "@/trpc/react";
@@ -18,8 +21,23 @@ import {
 import { ethers } from "ethers";
 import { AlertCircle, CheckCircle, Clock, Loader2, Wallet } from "lucide-react";
 
+import {
+  getPaymentSectionStatusClass,
+  getStatusDisplayText,
+  getStatusIconName,
+} from "@/lib/invoice-status";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+
+type InvoiceStatus =
+  | "pending"
+  | "paid"
+  | "crypto_paid"
+  | "offramp_initiated"
+  | "offramp_failed"
+  | "offramp_pending"
+  | "processing"
+  | "overdue";
 
 interface PaymentSectionProps {
   invoice: NonNullable<Request>;
@@ -46,6 +64,15 @@ const getRouteType = (route: PaymentRouteType, invoiceChain: string | null) => {
     REQUEST_NETWORK_CHAIN_TO_PAYMENT_NETWORK[
       invoiceChain as keyof typeof REQUEST_NETWORK_CHAIN_TO_PAYMENT_NETWORK
     ];
+
+  // Check if this is a crypto-to-fiat payment
+  if (route.id === "REQUEST_NETWORK_PAYMENT" && route.isCryptoToFiat) {
+    return {
+      type: "crypto-to-fiat" as const,
+      label: "Crypto-to-fiat",
+      description: "Pay with crypto for a fiat invoice",
+    };
+  }
 
   if (route.id === "REQUEST_NETWORK_PAYMENT") {
     return {
@@ -84,7 +111,9 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
     null,
   );
 
-  const [paymentStatus, setPaymentStatus] = useState(invoice.status);
+  const [paymentStatus, setPaymentStatus] = useState<InvoiceStatus>(
+    invoice.status as InvoiceStatus,
+  );
   const [paymentProgress, setPaymentProgress] = useState("idle");
   const [currentStep, setCurrentStep] = useState(1);
   const [isAppKitReady, setIsAppKitReady] = useState(false);
@@ -97,7 +126,7 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
     isLoading: isLoadingPaymentRoutes,
   } = api.invoice.getPaymentRoutes.useQuery(
     {
-      paymentReference: invoice.paymentReference,
+      requestId: invoice.requestId,
       walletAddress: address as string,
     },
     {
@@ -107,6 +136,19 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
 
   // Extract the chain from invoice currency
   const invoiceChain = getCurrencyChain(invoice.paymentCurrency);
+
+  // A function to render the correct status icon based on status name
+  const renderStatusIcon = (statusName: InvoiceStatus) => {
+    const iconName = getStatusIconName(statusName);
+    switch (iconName) {
+      case "CheckCircle":
+        return <CheckCircle className="inline-block w-4 h-4 mr-1" />;
+      case "AlertCircle":
+        return <AlertCircle className="inline-block w-4 h-4 mr-1" />;
+      case "Clock":
+        return <Clock className="inline-block w-4 h-4 mr-1" />;
+    }
+  };
 
   const displayPaymentProgress = () => {
     switch (paymentProgress) {
@@ -279,7 +321,7 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
 
     try {
       const paymentData = await payRequest({
-        paymentReference: invoice.paymentReference,
+        requestId: invoice.requestId,
         wallet: address,
         chain:
           selectedRoute?.id === "REQUEST_NETWORK_PAYMENT"
@@ -319,24 +361,10 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
         <CardTitle className="flex justify-between items-center">
           <span>Payment Details</span>
           <span
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              paymentStatus === "paid"
-                ? "bg-green-100 text-green-800"
-                : paymentStatus === "processing"
-                  ? "bg-orange-100 text-orange-800"
-                  : "bg-blue-100 text-blue-800"
-            }`}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${getPaymentSectionStatusClass(paymentStatus)}`}
           >
-            {paymentStatus === "paid" && (
-              <CheckCircle className="inline-block w-4 h-4 mr-1" />
-            )}
-            {paymentStatus === "processing" && (
-              <Clock className="inline-block w-4 h-4 mr-1" />
-            )}
-            {paymentStatus === "pending" && (
-              <Clock className="inline-block w-4 h-4 mr-1" />
-            )}
-            {paymentStatus}
+            {renderStatusIcon(paymentStatus)}
+            {getStatusDisplayText(paymentStatus)}
           </span>
         </CardTitle>
       </CardHeader>
@@ -395,6 +423,12 @@ export function PaymentSection({ invoice }: PaymentSectionProps) {
           <Label>Recipient Address</Label>
           <div className="font-mono bg-zinc-100 p-2 rounded">
             {invoice.payee}
+            {selectedRoute?.isCryptoToFiat && (
+              <div className="mt-2 text-sm text-amber-700">
+                Note: This address belongs to the Request Network Foundation for
+                processing your crypto-to-fiat payment.
+              </div>
+            )}
           </div>
         </div>
 

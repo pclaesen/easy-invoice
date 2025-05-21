@@ -8,6 +8,7 @@ import {
   type InvoiceFormValues,
   invoiceFormSchema,
 } from "@/lib/schemas/invoice";
+import type { User } from "@/server/db/schema";
 import { api } from "@/trpc/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -21,6 +22,7 @@ interface InvoiceCreatorProps {
     userId: string;
   };
   currentUser?: {
+    id: string;
     name: string;
     email: string;
   };
@@ -67,12 +69,13 @@ export function InvoiceCreator({
       invoiceCurrency: "USD",
       paymentCurrency: "",
       walletAddress: "",
+      isCryptoToFiatAvailable: false,
     },
   });
 
-  const onSubmit = async (data: InvoiceFormValues) => {
+  const onSubmit = (data: InvoiceFormValues) => {
     try {
-      await createInvoice(data);
+      createInvoice(data);
     } catch (error) {
       toast.error("Failed to create invoice", {
         description:
@@ -91,6 +94,15 @@ export function InvoiceCreator({
         </CardHeader>
         <CardContent>
           <InvoiceForm
+            currentUser={
+              currentUser
+                ? ({
+                    id: currentUser.id,
+                    name: currentUser.name,
+                    email: currentUser.email,
+                  } as User)
+                : (undefined as unknown as User)
+            }
             form={form}
             onSubmit={onSubmit}
             isLoading={isLoading}
@@ -99,7 +111,10 @@ export function InvoiceCreator({
         </CardContent>
       </Card>
 
-      <InvoicePreview data={form.watch()} />
+      <InvoicePreview
+        data={form.watch()}
+        paymentDetailsId={form.watch("paymentDetailsId")}
+      />
     </div>
   );
 }
